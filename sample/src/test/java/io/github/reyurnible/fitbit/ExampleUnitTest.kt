@@ -1,4 +1,4 @@
-package io.github.reyurnible.fitbitandroid
+package io.github.reyurnible.fitbit
 
 import org.junit.Test
 
