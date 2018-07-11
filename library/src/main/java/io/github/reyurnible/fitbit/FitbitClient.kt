@@ -7,12 +7,12 @@ import android.util.Base64
 import com.facebook.stetho.okhttp3.StethoInterceptor
 import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.addTo
-import io.reactivex.schedulers.Schedulers
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -122,18 +122,21 @@ class FitbitClient(
                     Pair("code", code),
                     Pair("redirect_uri", redirectUrl)
                 ))
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    // 保存
-                    fitbitPreference.token = it
-                    handlingCallback?.onComplete()
-                    callback?.onLoginSuccessed(it)
-                }, {
-                    handlingCallback?.onComplete()
-                    callback?.onLoginErrored(it)
+                .enqueue(object : Callback<FitbitAuthToken> {
+                    override fun onFailure(call: Call<FitbitAuthToken>?, _error: Throwable?) {
+                        val error = _error ?: return
+                        handlingCallback?.onComplete()
+                        callback?.onLoginErrored(error)
+                    }
+
+                    override fun onResponse(call: Call<FitbitAuthToken>?, response: Response<FitbitAuthToken>?) {
+                        val body = response?.body() ?: return
+                        // Save AuthToken
+                        fitbitPreference.token = body
+                        handlingCallback?.onComplete()
+                        callback?.onLoginSuccessed(body)
+                    }
                 })
-                .addTo(compositeDisposable)
         } else {
             handlingCallback?.onComplete()
             TODO("Not supporting authorization type.")

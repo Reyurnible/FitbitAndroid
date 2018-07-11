@@ -7,12 +7,6 @@ buildscript {
     versions.stetho = '1.5.0'
     // Retrofit
     versions.retrofit = '2.4.0'
-    // RxJava
-    versions.rx_java = '2.1.3'
-    // RxAndroid
-    versions.rx_android = '2.0.1'
-    // RxKotlin
-    versions.rx_kotlin = '2.2.0'
     // Test
     versions.junit = '4.12'
     versions.kmockito = '1.5.0'
