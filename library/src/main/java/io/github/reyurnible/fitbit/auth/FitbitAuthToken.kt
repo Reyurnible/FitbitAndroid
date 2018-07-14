@@ -1,4 +1,4 @@
-package io.github.reyurnible.fitbit
+package io.github.reyurnible.fitbit.auth
 
 import com.squareup.moshi.Json
 

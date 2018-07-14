@@ -1,5 +1,6 @@
-package io.github.reyurnible.fitbit
+package io.github.reyurnible.fitbit.api
 
+import io.github.reyurnible.fitbit.auth.FitbitAuthToken
 import retrofit2.Call
 import retrofit2.http.FieldMap
 import retrofit2.http.FormUrlEncoded
@@ -12,7 +13,15 @@ interface FitbitAuthApi {
     @POST("/oauth2/token")
     fun createAccessToken(
         @Header("Authorization") authorization: String,
-        @FieldMap params: Map<String, String>
+        @FieldMap params: Map<String, Any>
     ): Call<FitbitAuthToken>
 
+    @FormUrlEncoded
+    @POST("/oauth2/revoke")
+    fun revokeToken(
+        @Header("Authorization") authorization: String,
+        @FieldMap params: Map<String, Any>
+    ): Call<Any>
+
 }
+

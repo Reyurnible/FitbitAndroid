@@ -1,8 +1,7 @@
-package io.github.reyurnible.fitbit
+package io.github.reyurnible.fitbit.entity
 
 data class FitbitActivity(
     val inMetric: Boolean = false,
-//    val json: JSON?,
     val activityId: String?,
     val activityParentId: String?,
     val name: String?,

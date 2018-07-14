@@ -1,175 +1,112 @@
 package io.github.reyurnible.fitbit
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.util.Base64
 import com.facebook.stetho.okhttp3.StethoInterceptor
-import com.squareup.moshi.KotlinJsonAdapterFactory
-import com.squareup.moshi.Moshi
-import io.reactivex.disposables.CompositeDisposable
+import com.squareup.moshi.JsonAdapter
+import io.github.reyurnible.fitbit.api.FitbitActivityApi
+import io.github.reyurnible.fitbit.api.FitbitErrorResponse
+import io.github.reyurnible.fitbit.api.FitbitUserApi
+import io.github.reyurnible.fitbit.auth.FitbitAuthManager
+import io.github.reyurnible.fitbit.entity.FitbitUser
+import io.github.reyurnible.fitbit.util.MoshiCreator
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Callback
+import retrofit2.HttpException
 import retrofit2.Response
 import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 class FitbitClient(
     context: Context,
-    private val clientId: String,
-    private val clientSecret: String,
-    private val redirectUrl: String
+    private val authManager: FitbitAuthManager,
+    private val locale: FitbitLocale
 ) {
     companion object {
-        const val API_HOST = "https://api.fitbit.com"
-        const val AUTHORIZE_URL = "https://www.fitbit.com/oauth2/authorize"
-
-        val instance: FitbitClient
-            get() = _instance ?: throw IllegalStateException("Fitbit client must be initialized")
-        private var _instance: FitbitClient? = null
-
-        fun initialize(context: Context, clientId: String, clientSecret: String, redirectUrl: String) {
-            _instance = FitbitClient(context, clientId, clientSecret, redirectUrl)
-        }
-
-        fun release() {
-            _instance?.release()
-            _instance = null
-        }
+        const val ExpiredTokenResponseCode = 401
     }
 
-    object ResponseTypes {
-        const val code = "code"
-        const val token = "token"
-    }
-
-    private val fitbitPreference: FitbitPreference = FitbitPreferenceImpl(context)
     private val client: OkHttpClient =
         OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-            .addNetworkInterceptor(StethoInterceptor())
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+                    addNetworkInterceptor(StethoInterceptor())
+                }
+            }
+            .addInterceptor { chain ->
+                val request = chain.request()
+                    .newBuilder()
+                    .header("Accept-Locale", locale.param)
+                    .header("Authorization", "Bearer ${authManager.currentToken?.accessToken}")
+                    .build()
+                chain.proceed(request)
+            }
             .build()
     private val retrofit: Retrofit =
         Retrofit.Builder()
-            .baseUrl(API_HOST)
+            .baseUrl(FitbitConstants.API_HOST)
             .client(client)
-            .addConverterFactory(
-                MoshiConverterFactory.create(Moshi.Builder().add(KotlinJsonAdapterFactory()).build())
-            )
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(MoshiCreator.create()))
             .build()
-    // Base64はNO_WRAPにしないと改行される(https://github.com/square/retrofit/issues/1153)
-    private val basicAuthorization: String
-        get() = "Basic ${Base64.encodeToString("$clientId:$clientSecret".toByteArray(), Base64.NO_WRAP)}"
-    private val compositeDisposable = CompositeDisposable()
-    var callback: FitbitLoginCallback? = null
-    // Provide some apis
-    val authApi: FitbitAuthApi
-        get() = retrofit.create(FitbitAuthApi::class.java)
+    private val errorResponseAdapter: JsonAdapter<FitbitErrorResponse> =
+        MoshiCreator.create().adapter(FitbitErrorResponse::class.java)
 
-    /**
-     * ログインしているかどうかを返す
-     */
-    fun isLogin(): Boolean = (fitbitPreference.token != null)
+    private val activityApi: FitbitActivityApi
+        get() = retrofit.create(FitbitActivityApi::class.java)
+    private val userApi: FitbitUserApi
+        get() = retrofit.create(FitbitUserApi::class.java)
 
-    /**
-     * ログイン
-     */
-    fun login(scopes: Array<FitbitScope>): Intent = run {
-        Intent(Intent.ACTION_VIEW, createAuthorizationUri(scopes))
-    }
+    fun getMe(callback: FitbitApiCallback<FitbitUser>) =
+        requestOnErrorRefreshToken({ userApi.getMe() }, callback)
 
-    /**
-     * ログアウト
-     */
-    fun logout() {
-        // Tokenの値をClearする
-        fitbitPreference.clear()
-    }
+    fun getUser(userId: String, callback: FitbitApiCallback<FitbitUser>) =
+        requestOnErrorRefreshToken({ userApi.getUser(userId) }, callback)
 
-    /**
-     * ログインページのURL作成
-     */
-    fun createAuthorizationUri(scopes: Array<FitbitScope>, responseType: String = ResponseTypes.code): Uri =
-        Uri.parse(AUTHORIZE_URL)
-            .buildUpon()
-            .appendQueryParameter("client_id", clientId)
-            .appendQueryParameter("response_type", responseType)
-            .appendQueryParameter("scope", FitbitScope.generateUrlString(scopes))
-            .appendQueryParameter("redirect_uri", redirectUrl)
-            .build()
 
-    fun handleRedirectUrl(uri: Uri?, handlingCallback: HandlingCallback? = null) {
-        // 前の処理を一度Clearする
-        compositeDisposable.clear()
-        uri ?: let {
-            handlingCallback?.onComplete()
-            callback?.onLoginErrored(IllegalArgumentException("Callback uri is null."))
-            return
-        }
-        if (uri.queryParameterNames.contains(ResponseTypes.code)) {
-            // Code Flow
-            // Parsing uri format : "{redirect_url}?code=~~~~~#_=_
-            val code = uri.getQueryParameter(ResponseTypes.code)
-            authApi.createAccessToken(
-                basicAuthorization,
-                mapOf(
-                    Pair("client_id", clientId),
-                    Pair("grant_type", "authorization_code"),
-                    Pair("code", code),
-                    Pair("redirect_uri", redirectUrl)
-                ))
-                .enqueue(object : Callback<FitbitAuthToken> {
-                    override fun onFailure(call: Call<FitbitAuthToken>?, _error: Throwable?) {
-                        val error = _error ?: return
-                        handlingCallback?.onComplete()
-                        callback?.onLoginErrored(error)
-                    }
+    private fun <T> requestOnErrorRefreshToken(
+        requestCreator: () -> Call<T>,
+        callback: FitbitApiCallback<T>,
+        isRefreshable: Boolean = true
+    ) {
+        val call = requestCreator.invoke()
+        call.enqueue(object : Callback<T> {
+            override fun onResponse(call: Call<T>?, response: Response<T>?) {
+                response?.body()?.let { callback.onResponse(it) }
+            }
 
-                    override fun onResponse(call: Call<FitbitAuthToken>?, response: Response<FitbitAuthToken>?) {
-                        val body = response?.body() ?: return
-                        // Save AuthToken
-                        fitbitPreference.token = body
-                        handlingCallback?.onComplete()
-                        callback?.onLoginSuccessed(body)
-                    }
-                })
-        } else {
-            handlingCallback?.onComplete()
-            TODO("Not supporting authorization type.")
-            // Grant Flow
-            // Parsing uri format : "{redirect_url}#access_token=~~~&user_id=6QV3DH&scope=~~~&token_type=Bearer&expires_in=86400
-            /*val fragmentQueries =
-                uri.fragment.split("&")
-                    .map {
-                        it.split("=")
-                            .takeIf { it.size == 2 }
-                            ?.let {
-                                Pair(it[0], it[1])
+            override fun onFailure(call: Call<T>?, _error: Throwable?) {
+                val error = (_error as? HttpException) ?: return
+                val code = error.code()
+                if (isRefreshable && code == ExpiredTokenResponseCode) {
+                    authManager.refreshToken(object : FitbitAuthManager.RefreshTokenCallback {
+                        override fun onRefreshed() {
+                            // Not call refresh token twice request
+                            requestOnErrorRefreshToken(requestCreator, callback, isRefreshable = false)
+                        }
+
+                        override fun onError(error: Throwable) {
+                            (error as? HttpException)?.let {
+                                callback.onError(it.code(), parseFitbitErrorResponse(it)?.errors)
                             }
-                    }
-                    .filterNotNull()
-                    .toMap()
-            val accessToken: String = fragmentQueries.get("access_token")
-                ?: throw IllegalArgumentException("")*/
+                        }
+                    })
+                } else {
+                    callback.onError(code, parseFitbitErrorResponse(error)?.errors)
+                }
+            }
+        })
+    }
+
+    private fun parseFitbitErrorResponse(error: HttpException): FitbitErrorResponse? =
+        error.response().errorBody()?.string()?.let {
+            errorResponseAdapter.fromJson(it)
         }
-    }
 
-    fun release() {
-        callback = null
-        compositeDisposable.dispose()
-    }
-
-    interface FitbitLoginCallback {
-        fun onLoginSuccessed(token: FitbitAuthToken)
-        fun onLoginErrored(error: Throwable)
-    }
-
-    interface HandlingCallback {
-        fun onComplete()
+    interface FitbitApiCallback<T> {
+        fun onResponse(response: T?)
+        fun onError(statusCode: Int, errors: List<FitbitErrorResponse.FitbitError>?)
     }
 
 }

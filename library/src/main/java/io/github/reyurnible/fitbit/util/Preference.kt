@@ -1,9 +1,9 @@
-package io.github.reyurnible.fitbit
+package io.github.reyurnible.fitbit.util
 
 import android.content.Context
 import android.content.SharedPreferences
 
-interface Preference {
+internal interface Preference {
     val context: Context
     val preferenceName: String
     val sharedPreference: SharedPreferences

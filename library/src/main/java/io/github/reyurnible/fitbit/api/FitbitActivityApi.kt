@@ -1,5 +1,6 @@
-package io.github.reyurnible.fitbit
+package io.github.reyurnible.fitbit.api
 
+import io.github.reyurnible.fitbit.entity.FitbitActivity
 import retrofit2.Call
 import retrofit2.http.GET
 

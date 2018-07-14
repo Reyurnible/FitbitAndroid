@@ -1,10 +1,10 @@
-package io.github.reyurnible.fitbit
+package io.github.reyurnible.fitbit.auth
 
 import android.content.Context
 
-class FitbitPreferenceImpl(
+internal class FitbitAuthPreferenceImpl(
     override val context: Context
-) : FitbitPreference {
+) : FitbitAuthPreference {
     private object Keys {
         const val accessToken = "access_token"
         const val refreshToken = "refresh_token"
