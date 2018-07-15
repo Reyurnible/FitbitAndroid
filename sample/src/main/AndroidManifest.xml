@@ -2,7 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.github.reyurnible.fitbit">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
+        android:name=".SampleApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -14,6 +17,19 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- Set Callback Activity -->
+        <activity android:name=".auth.FitbitAuthCompleteActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- TODO Replace Fitbit Callback Url scheme -->
+                <data
+                    android:host="fitbit"
+                    android:pathPattern="/callback"
+                    android:scheme="sample"/>
             </intent-filter>
         </activity>
     </application>
