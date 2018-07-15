@@ -7,9 +7,13 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 
 interface FitbitHeartRateApi {
-    @GET("/${FitbitConstants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/heart/date/{date}/{period}.json")
+    private object Constants {
+        const val API_VERSION = 1
+    }
+
+    @GET("/${Constants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/heart/date/{date}/{period}.json")
     fun getHeartRateActivities(@Path("date") date: String, @Path("period") period: String): Call<FitbitTimeSeriesActivity.HeartRate>
 
-    @GET("/${FitbitConstants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/heart/date/{baseDate}/{endDate}.json")
+    @GET("/${Constants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/heart/date/{baseDate}/{endDate}.json")
     fun getHeartRateActivitiesByDateRange(@Path("baseDate") baseDate: String, @Path("endDate") endDate: String): Call<FitbitTimeSeriesActivity.HeartRate>
 }

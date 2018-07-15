@@ -7,9 +7,13 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 
 interface FitbitUserApi {
-    @GET("/${FitbitConstants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/profile.json")
+    private object Constants {
+        const val API_VERSION = 1
+    }
+
+    @GET("/${Constants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/profile.json")
     fun getMe(): Call<FitbitUser>
 
-    @GET("/${FitbitConstants.API_VERSION}/user/{userId}/profile.json")
+    @GET("/${Constants.API_VERSION}/user/{userId}/profile.json")
     fun getUser(@Path("userId") userId: String): Call<FitbitUser>
 }

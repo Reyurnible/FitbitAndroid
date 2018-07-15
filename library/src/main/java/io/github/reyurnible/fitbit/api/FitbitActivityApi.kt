@@ -8,12 +8,16 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 
 interface FitbitActivityApi {
-    @GET("/${FitbitConstants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/date/{date}.json")
+    private object Constants {
+        const val API_VERSION = 1
+    }
+
+    @GET("/${Constants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/date/{date}.json")
     fun getDateActivities(@Path("date") date: String): Call<FitbitDateActivity>
 
-    @GET("/${FitbitConstants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/recent.json")
+    @GET("/${Constants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/recent.json")
     fun getRecentActivities(): Call<List<FitbitActivity>>
 
-    @GET("/${FitbitConstants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/frequent.json")
+    @GET("/${Constants.API_VERSION}/user/${FitbitConstants.CURRENT_USER_ID_PARAM}/activities/frequent.json")
     fun getFrequentActivities(): Call<List<FitbitActivity>>
 }

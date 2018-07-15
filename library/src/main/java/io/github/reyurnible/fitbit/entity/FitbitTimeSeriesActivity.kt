@@ -10,4 +10,10 @@ sealed class FitbitTimeSeriesActivity<T>(
         override val activities: List<FitbitHeartRateDateActivity>
     ) : FitbitTimeSeriesActivity<FitbitHeartRateDateActivity>(activities)
 
+    data class Sleep(
+        @Json(name = "sleep")
+        override val activities: List<FitbitSleep>,
+        val summary: FitbitSleepActivitySummary?
+    ) : FitbitTimeSeriesActivity<FitbitSleep>(activities)
+
 }
