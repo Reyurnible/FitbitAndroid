@@ -1,12 +1,13 @@
-package io.github.reyurnible.fitbit
+package io.github.reyurnible.fitbit.api
 
 import com.facebook.stetho.okhttp3.StethoInterceptor
 import com.squareup.moshi.JsonAdapter
-import io.github.reyurnible.fitbit.api.FitbitActivityApi
-import io.github.reyurnible.fitbit.api.FitbitErrorResponse
-import io.github.reyurnible.fitbit.api.FitbitLocale
-import io.github.reyurnible.fitbit.api.FitbitUserApi
+import io.github.reyurnible.fitbit.BuildConfig
+import io.github.reyurnible.fitbit.FitbitConstants
 import io.github.reyurnible.fitbit.auth.FitbitAuthManager
+import io.github.reyurnible.fitbit.entity.FitbitActivity
+import io.github.reyurnible.fitbit.entity.FitbitDateActivity
+import io.github.reyurnible.fitbit.entity.FitbitTimeSeriesActivity
 import io.github.reyurnible.fitbit.entity.FitbitUser
 import io.github.reyurnible.fitbit.util.MoshiCreator
 import okhttp3.OkHttpClient
@@ -52,17 +53,45 @@ class FitbitClient(
     private val errorResponseAdapter: JsonAdapter<FitbitErrorResponse> =
         MoshiCreator.create().adapter(FitbitErrorResponse::class.java)
 
-    private val activityApi: FitbitActivityApi
-        get() = retrofit.create(FitbitActivityApi::class.java)
-    private val userApi: FitbitUserApi
+    val userApi: FitbitUserApi
         get() = retrofit.create(FitbitUserApi::class.java)
+    val activityApi: FitbitActivityApi
+        get() = retrofit.create(FitbitActivityApi::class.java)
+    val heartRateApi: FitbitHeartRateApi
+        get() = retrofit.create(FitbitHeartRateApi::class.java)
+    val sleepApi: FitbitSleepApi
+        get() = retrofit.create(FitbitSleepApi::class.java)
 
+    // User
     fun getMe(callback: FitbitApiCallback<FitbitUser>) =
         requestOnErrorRefreshToken({ userApi.getMe() }, callback)
 
     fun getUser(userId: String, callback: FitbitApiCallback<FitbitUser>) =
         requestOnErrorRefreshToken({ userApi.getUser(userId) }, callback)
 
+    // Activities
+    fun getDateActivities(date: String, callback: FitbitApiCallback<FitbitDateActivity>) =
+        requestOnErrorRefreshToken({ activityApi.getDateActivities(date) }, callback)
+
+    fun getRecentActivities(callback: FitbitApiCallback<List<FitbitActivity>>) =
+        requestOnErrorRefreshToken({ activityApi.getRecentActivities() }, callback)
+
+    fun getFrequentActivities(callback: FitbitApiCallback<List<FitbitActivity>>) =
+        requestOnErrorRefreshToken({ activityApi.getFrequentActivities() }, callback)
+
+    // HeartRate
+    fun getHeartRateActivities(date: String, period: String, callback: FitbitApiCallback<FitbitTimeSeriesActivity.HeartRate>) =
+        requestOnErrorRefreshToken({ heartRateApi.getHeartRateActivities(date, period) }, callback)
+
+    fun getHeartRateActivitiesByDateRange(baseDate: String, endDate: String, callback: FitbitApiCallback<FitbitTimeSeriesActivity.HeartRate>) =
+        requestOnErrorRefreshToken({ heartRateApi.getHeartRateActivitiesByDateRange(baseDate, endDate) }, callback)
+
+    // Sleep
+    fun getSleepActivities(date: String, callback: FitbitApiCallback<FitbitTimeSeriesActivity.Sleep>) =
+        requestOnErrorRefreshToken({ sleepApi.getSleepActivities(date) }, callback)
+
+    fun getSleepActivitiesByDateRange(startDate: String, endDate: String, callback: FitbitApiCallback<FitbitTimeSeriesActivity.Sleep>) =
+        requestOnErrorRefreshToken({ sleepApi.getSleepActivitiesByDateRange(startDate, endDate) }, callback)
 
     private fun <T> requestOnErrorRefreshToken(
         requestCreator: () -> Call<T>,

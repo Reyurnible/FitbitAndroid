@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Fragment
 import android.content.Context
 import android.content.Intent
+import io.github.reyurnible.fitbit.api.FitbitClient
 import io.github.reyurnible.fitbit.api.FitbitLocale
 import io.github.reyurnible.fitbit.auth.FitbitAuthManager
 import io.github.reyurnible.fitbit.auth.FitbitScope
