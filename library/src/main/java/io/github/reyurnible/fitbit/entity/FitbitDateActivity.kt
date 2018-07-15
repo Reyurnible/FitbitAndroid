@@ -1,6 +1,4 @@
-package io.github.reyurnible.fitbit.api
-
-import io.github.reyurnible.fitbit.entity.FitbitActivity
+package io.github.reyurnible.fitbit.entity
 
 data class FitbitDateActivity(
     val activities: List<FitbitActivity>,

@@ -2,6 +2,7 @@ package io.github.reyurnible.fitbit.api
 
 import io.github.reyurnible.fitbit.FitbitConstants
 import io.github.reyurnible.fitbit.entity.FitbitActivity
+import io.github.reyurnible.fitbit.entity.FitbitDateActivity
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
