@@ -1,4 +1,4 @@
-package io.github.reyurnible.fitbit
+package io.github.reyurnible.fitbit.api
 
 enum class FitbitLocale(val param: String) {
     UnitedStates("en_US"),

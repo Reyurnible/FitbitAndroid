@@ -1,10 +1,10 @@
 package io.github.reyurnible.fitbit
 
-import android.content.Context
 import com.facebook.stetho.okhttp3.StethoInterceptor
 import com.squareup.moshi.JsonAdapter
 import io.github.reyurnible.fitbit.api.FitbitActivityApi
 import io.github.reyurnible.fitbit.api.FitbitErrorResponse
+import io.github.reyurnible.fitbit.api.FitbitLocale
 import io.github.reyurnible.fitbit.api.FitbitUserApi
 import io.github.reyurnible.fitbit.auth.FitbitAuthManager
 import io.github.reyurnible.fitbit.entity.FitbitUser
@@ -19,7 +19,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 class FitbitClient(
-    context: Context,
     private val authManager: FitbitAuthManager,
     private val locale: FitbitLocale
 ) {
@@ -46,7 +45,7 @@ class FitbitClient(
             .build()
     private val retrofit: Retrofit =
         Retrofit.Builder()
-            .baseUrl(FitbitConstants.API_HOST)
+            .baseUrl(FitbitConstants.API_ENDPOINT)
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(MoshiCreator.create()))
             .build()

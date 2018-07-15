@@ -6,8 +6,8 @@ import android.util.Base64
 import com.facebook.stetho.okhttp3.StethoInterceptor
 import io.github.reyurnible.fitbit.BuildConfig
 import io.github.reyurnible.fitbit.FitbitConstants
-import io.github.reyurnible.fitbit.FitbitLocale
 import io.github.reyurnible.fitbit.api.FitbitAuthApi
+import io.github.reyurnible.fitbit.api.FitbitLocale
 import io.github.reyurnible.fitbit.util.MoshiCreator
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -63,7 +63,7 @@ class FitbitAuthManager(
             .build()
     private val retrofit: Retrofit =
         Retrofit.Builder()
-            .baseUrl(FitbitConstants.API_HOST)
+            .baseUrl(FitbitConstants.API_ENDPOINT)
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(MoshiCreator.create()))
             .build()

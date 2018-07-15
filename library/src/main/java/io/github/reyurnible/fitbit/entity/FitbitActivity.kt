@@ -1,9 +1,7 @@
 package io.github.reyurnible.fitbit.entity
 
 data class FitbitActivity(
-    val inMetric: Boolean = false,
     val activityId: String?,
-    val activityParentId: String?,
     val name: String?,
     val description: String?,
     val calories: Float?,
@@ -11,6 +9,8 @@ data class FitbitActivity(
     val distance: Float?,
     // in Seconds
     val duration: Float?,
+    val inMetric: Boolean = false,
+    val activityParentId: String?,
     val hasStartTime: Boolean = false,
     val isFavorite: Boolean = false,
     val logId: String?,
